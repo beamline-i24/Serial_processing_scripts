@@ -1,0 +1,4 @@
+/dls/i24/data/2018/nt14493-106/processing/stills_process/glxa/ramones
+/dls/i24/data/2018/nt14493-106/processing/stills_process/glxa/pantera2to8_P21_b_120
+/dls/i24/data/2018/nt14493-106/processing/stills_process/glxa/pantera
+/dls/i24/data/2018/nt14493-106/processing/stills_process/glxa/laibach
