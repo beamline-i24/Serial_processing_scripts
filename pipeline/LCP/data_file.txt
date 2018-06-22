@@ -1,0 +1,15 @@
+/dls/mx/data/mx17352/mx17352-126/VMXi-AB0440/well_27/images/image_2058.nxs
+/dls/mx/data/mx17352/mx17352-126/VMXi-AB0440/well_28/images/image_2059.nxs
+/dls/mx/data/mx17352/mx17352-126/VMXi-AB0440/well_29/images/image_2060.nxs
+/dls/mx/data/mx17352/mx17352-126/VMXi-AB0440/well_30/images/image_2061.nxs
+/dls/mx/data/mx17352/mx17352-126/VMXi-AB0440/well_64/images/image_2152.nxs
+/dls/mx/data/mx17352/mx17352-126/VMXi-AB0440/well_66/images/image_2153.nxs
+/dls/mx/data/mx17352/mx17352-126/VMXi-AB0440/well_68/images/image_2154.nxs
+/dls/mx/data/mx17352/mx17352-126/VMXi-AB0440/well_70/images/image_2155.nxs
+/dls/mx/data/mx17352/mx17352-126/VMXi-AB0440/well_72/images/image_2156.nxs
+/dls/mx/data/mx17352/mx17352-126/VMXi-AB0440/well_55/images/image_2172.nxs
+/dls/mx/data/mx17352/mx17352-126/VMXi-AB0440/well_56/images/image_2173.nxs
+/dls/mx/data/mx17352/mx17352-126/VMXi-AB0440/well_58/images/image_2174.nxs
+/dls/mx/data/mx17352/mx17352-126/VMXi-AB0440/well_60/images/image_2175.nxs
+/dls/mx/data/mx17352/mx17352-126/VMXi-AB0440/well_62/images/image_2176.nxs
+
