@@ -1,0 +1,5 @@
+dials.import path/to/cbf.cbf output.datablock=name_datablock.json
+dials.find_spots datablock.json output.reflections=strong.pickle spotfind.phil
+dials.index datablock.json strong.pickle reference_experimental.json output.experiments=output_experiement.json output.reflections=idx.pickle idx.phil
+dials.integrate experiment.json idx.pickle output.experiments=int_experiment.json output.reflections=int.pickle int.phil
+cxi.frame_extractor input.experiments=int_experiments.json input.reflections=int.pickle output.filename=int.pickle

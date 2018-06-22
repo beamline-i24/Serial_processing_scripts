@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+ <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css"> 
+  <head>
+    <meta charset="utf-8">
+    <script type="text/javascript" src="https://ispyb.diamond.ac.uk/touchscreen/js/vendor/jquery/jquery-1.9.1.min.js"></script>
+    <script type="text/javascript" src="https://ispyb.diamond.ac.uk/touchscreen/js/vendor/jquery/jquery.mobile-1.4.5.js"></script>
+              
+    <style type="text/css">
+      .myButton{
+	-moz-box-shadow:inset 0px 34px 0px -15px #b54b3a;
+	-webkit-box-shadow:inset 0px 34px 0px -15px #b54b3a;
+	box-shadow:inset 0px 34px 0px -15px #b54b3a;
+	background-color:#a73f2d;
+	border:1px solid #241d13;
+	display:inline-block;
+	cursor:pointer;
+	color:#ffffff;
+	font-family:Arial;
+	font-size:15px;
+	font-weight:bold;
+	padding:9px 23px;
+	text-decoration:none;
+	text-shadow:0px -1px 0px #7a2a1d;
+	}
+	.myButton:hover {
+		background-color:#b34332;
+	}
+      body {font-size: 1.6em;}
+      .hidden {display:none;}
+      .show {display:inline !important;}
+      button {
+        border: 2px solid black; background: #E5E4E2;
+        font-size: .5em; font-weight: bold; color: black;
+        padding: .8em 2em;
+        margin-top: .4em;
+      }
+        .oav_view {
+            position: relative;
+        }
+        .crosshair {
+            color: red;
+            position: absolute;
+        }
+    </style>
+
+  </head>
+  <body>
+
+<div data-role="page" id="allocation">
+    <header class="w3-container w3-red">
+    <div data-role="main" class="w3-container w3-teal">
+	<button class="w3-btn" onclick="document.getElementById('id01').style.display='block'">Show mouse location panel</button>
+	<div id="id01" class="w3-panel w3-pale-green w3-display-container" style="border:8px solid red">
+  	    <span onclick="this.parentElement.style.display='none'" class="w3-button w3-display-topright">X</span>
+	    <form name = "coordinatesform" method = "post">
+	        Mouse X: <input type="text" id="mouseX"> Mouse Y: <input type="text" id="mouseY"><br />
+		Setting coordinates to x = <input type="text" name="form_x" size="4" /> - y = <input type="text" name="form_y" size="4" /> <br />
+		Cross-x = <input type="text" name="cx" value="646"  /> Cross-y = <input type="text" name="cy" value="482" /> <!--x=847 y=502 for cam2-->
+		</br>
+		</br>
+		</br>
+	    </form>
+	    <script type="text/javascript">
+		$.mobile.autoInitializePage = false;
+        	$('img.oav_cam').attr('src', "http://bl24i-di-serv-01.diamond.ac.uk:8080/oav.MJPG.mjpg")
+		  var host = 'http://'+$('<a>').prop('href', window.location.href).prop('hostname')+':8000'
+        	  var centres = [0.5,0.5]
+		document.body.onmousemove = function(e){
+		  e = e
+		  var pageX = e.pageX;
+		  var pageY = e.pageY;
+		  if (pageX === undefined) {
+		    pageX = e.clientX + document.body.scrollLeft + document.documentElement.scrollLeft;
+		    pageY = e.clientY + document.body.scrollTop + document.documentElement.scrollTop;
+		  }
+		  document.getElementById('mouseX').value = pageX;
+		  document.getElementById('mouseY').value = pageY;
+		};
+		function point_it(event){
+			console.log('SET_XY')
+			var pos_x = event.pageX-$(".oav_view").offset().left;
+			var pos_y = event.pageY-$(".oav_view").offset().top;
+			document.coordinatesform.form_x.value = pos_x;
+			document.coordinatesform.form_y.value = pos_y;
+                        var w = $('.oav_view').width()
+			var h = $('.oav_view').height()
+			console.log($('.oav_view').height(), $('.oav_view').width(), pos_x, pos_y); 
+		        var x = pos_x/$('.oav_view').width()-centres[0]
+		        var y = pos_y/$('.oav_view').height()-centres[1]
+			document.coordinatesform.form_x.value = x;
+			document.coordinatesform.form_y.value = y;
+			console.log(x,y, centres)
+			$.ajax({
+		      		url: host+'/cgi-bin/tester.py?ty=oav&x='+x+'&y='+y+'&w='+w+'&h='+h,
+		      		type: 'GET',
+		      		dataType: 'json',
+		      		success: function(json){
+		        	console.log('ok', json)
+		      		},
+		    		error: function(json){
+		         		console.log('not ok', json);
+				},
+				})	
+		    			
+		}
+		function _set_centre() {
+			cx = document.coordinatesform.cx.value;
+			cy = document.coordinatesform.cy.value;
+		  	console.log('set_centre')
+		  	$.ajax({
+		    		url: host+'/cgi-bin/tester.py?ty=centres&cx='+cx+'&cy='+cy,
+		    		type: 'GET',
+		    		dataType: 'json',
+		    		success: function(json){
+		        var w = $('.oav_view').width()
+		        var h = $('.oav_view').height()
+			console.log(w,h)
+		        $('.crosshair').css('left', (json[0]*w)+'px')
+		        $('.crosshair').css('top', (json[1]*h)+'px')		        
+			centres = json
+			console.log('ok', json)
+		     	},
+		     	error: function(json){
+		        	 console.log('not ok', json);
+		    	},
+		      })
+		}
+		function _refresh() {
+           	 _set_centre()
+           	 setTimeout(function(){ _refresh() }, 1000000)
+        	}
+        	_refresh()
+	    </script>	
+	    <button onclick="_set_centre()" class="myButton  w3-display-bottommiddle"> Set Crosshairs </button>
+	</div>
+	<div style="border:8px solid red" class="w3-panel w3-pale-green w3-center">   
+	<form name="pointform" method="post">
+	<div class="oav_view" onclick="point_it(event)">
+         <div class="crosshair">+</div>
+              <img id="cam3" src="http://bl24i-di-serv-01.diamond.ac.uk:8080/oav.mjpg.mjpg"style="height:100%;width=100%;" alt = "OAV 3" frameborder=yes marginheight="1px"> </img> <!--http://bl24i-di-serv-01.diamond.ac.uk:8082/cam2.mjpg.mjpg-->
+        	</div>
+	
+	</form>     
+  
+    	</div>
+	</div>
+     </div>
+  </body>
+</html>
