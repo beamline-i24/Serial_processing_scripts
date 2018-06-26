@@ -11,6 +11,7 @@ import matplotlib.colors as colors
 import matplotlib.cm as cm
 import argparse
 import matplotlib.animation as animation
+import json
 
 import hit_calculator as hc
 import hit_plotter as hit_plot
@@ -40,7 +41,7 @@ def argparser(argv=None):
 			help="spot_count_threshold, default= 15")
     parser.add_argument("-dm","--d_min_cutoff", type=float, default = None,
 			help="max resolution for image to be processed, default=cbf header resolution")
-    parser.add_argument("-p","--process_type",type=str, default = 'live', choices = ['live', 'client', 'pickle', 'compare', 'index'],
+    parser.add_argument("-p","--process_type",type=str, default = 'live', choices = ['live', 'client', 'pickle', 'compare', 'index', 'jlive'],
                             help="client runs spot_find client to calculate hit_rate, pickle reads values from strong.pickle files")
     parser.add_argument("-pl","--plot",type = bool, default = False,
                             help="enable plots for certain process_types")
@@ -54,6 +55,10 @@ def argparser(argv=None):
     elif args.processed_directory and args.process_type != 'compare':
        print("redundant variable: -pd processed_directory only used for process type compare")
     return args
+
+def print_flush(string):
+     sys.stdout.write('\r%s' % string)
+     sys.stdout.flush()
 
 def from_pickle(args):
     print 'list files'
@@ -154,6 +159,77 @@ def spot_client_index(args):
 
     return np_array
 
+def animate_json(i,args):
+    global last_index
+    d_min_cutoff = args.d_min_cutoff 
+    spot_count_cutoff = args.spot_count_cutoff
+    log_spot_cutoff = args.log_spot_cutoff
+    input_file = args.input_file
+    print('loading file')
+    print('updating plot')
+    out_array=[]
+    with open(input_file, 'r') as f:
+         data = json.load(f)
+    for i, record in enumerate(data):
+        print_flush(str(i))
+        image_num=record['image'].split('_')[1].split('.')[0]
+        strong=record['n_spots_total']
+        intensity=record['total_intensity']
+        if float(record['total_intensity']) <= 0 or int(record['n_spots_no_ice']) <= 0:
+           ratio=0
+        else:
+           ratio=(float(record['total_intensity'])/float(record['n_spots_no_ice']))
+        noise_1 = record['noisiness_method_1']
+        noise_2 = record['noisiness_method_2']
+        d_min = record['d_min']
+        d_min_1 = record['d_min_1']
+        d_min_2 = record['d_min_2']
+        out_array.append([image_num, ratio, intensity, strong, noise_1, noise_2, d_min, d_min_1, d_min_2])
+        np_array = np.array(out_array)
+        cNorm  = colors.Normalize(vmin=0, vmax=1)
+        scalarMap = cm.ScalarMappable(norm=cNorm, cmap=cm.seismic) 
+        colours = []
+        hits = []
+        hit_images = []
+        hit_count = 0
+        indexable_images = []
+        for num, ratio, intensity, strong,  noise_1, noise_2, d_min, d_min_1, d_min_2 in np_array:
+            if strong >= spot_count_cutoff:
+              indexable_images.append(num)
+              if ratio >= 10:
+                 if  0.0 <= noise_1 <= 0.875:
+                    if 0.0 <= noise_2 <= 0.96:
+                         hit_images.append([num, strong])
+                         colours.append(scalarMap.to_rgba(1))
+                         hit_count+=1
+                    else:
+                       hits.append(0) 
+                       colours.append(scalarMap.to_rgba(0))
+                 else:
+                   hits.append(0) 
+                   colours.append(scalarMap.to_rgba(0))
+              else:
+                hits.append(0) 
+                colours.append(scalarMap.to_rgba(0))
+            else:
+               hits.append(0) 
+               colours.append(scalarMap.to_rgba(0))
+        if hit_count > 0 and total > 0: 
+           print('estimated counts rate = %f'%(float(hit_count*100/float(total))))
+        print('number of potential indexable images =  %d'%(len(indexable_images)))
+        if len(indexable_images) > 0 and hit_count > 0:
+           print('estimated hit_rate from indexable images = %f'%(float(hit_count)*100/float(len(indexable_images))))
+        #hit_array = np.array(hit_images)
+        print heapq.nlargest(10, hit_images, key=lambda x: x[1])
+        ax1.scatter(image_numbers[last_index:], spot_counts[last_index:],  c=colours[last_index:], cmap=cm.seismic)
+        last_index=len(image_numbers)
+        #a,b = np.polyfit(np.log(intensities),spot_counts,1, w=np.sqrt(spot_counts))
+        out_file=input_file.split('.')[0]
+        with open(out_file+'.hits','w') as hit_file:
+             for image, spot in hit_images:
+                 hit_file.write(str(int(image)) + '\n')
+
+
 def animate(i, args):    
     global last_index
     d_min_cutoff = args.d_min_cutoff 
@@ -174,16 +250,13 @@ def animate(i, args):
     for num, i, hit, strong, high, noise_1, noise_2, d_min, d_min_1, d_min_2 in np_array:
         if strong >= spot_count_cutoff:
           indexable_images.append(num)
-          if i >= 0:
-             if  0.0 <= noise_1 <= 0.82:
+          if i > 0:
+            if float(i)/strong > 10:
+             if  0.0 <= noise_1 <= 0.875:
                 if 0.0 <= noise_2 <= 0.96:
-                   #if high >= 2:
                      hit_images.append([num, strong])
                      colours.append(scalarMap.to_rgba(1))
                      hit_count+=1
-                   #else:
-                   #   hits.append(0) 
-                   #   colours.append(scalarMap.to_rgba(0))
                 else:
                    hits.append(0) 
                    colours.append(scalarMap.to_rgba(0))
@@ -217,6 +290,11 @@ if __name__ == '__main__':
     	from_pickle(args)
     elif args.process_type == 'client':
         intensity_client(args)
+        plt.show()
+    elif args.process_type == 'jlive':
+        plt.axhline(args.spot_count_cutoff)
+        ani = animation.FuncAnimation(fig, animate_json, fargs=(args, ), interval=5000, frames=100000)
+        print ani, type(ani)
         plt.show()
     elif args.process_type == 'live':
         plt.axhline(args.spot_count_cutoff)

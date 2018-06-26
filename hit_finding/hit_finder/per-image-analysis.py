@@ -148,7 +148,7 @@ processing_recipe = \
   "2": { "service": "DLS Per-Image-Analysis",
          "queue": "per_image_analysis",
          "output": 3,
-         "parameters": { 'd_min': d_min_cutoff, 'd_max': d_max_cutoff  , 'spotfinder.lookup.mask':mask} 
+         "parameters": { 'd_min': d_min_cutoff, 'd_max': d_max_cutoff  , 'spotfinder.lookup.mask':mask, 'json':chip_name+'.json'} 
        },
   "3": { "service": "Feedback for I24 serial crystallography",
          "queue": "transient.i24.pia_feedback",
@@ -283,6 +283,7 @@ with open(os.path.join(output_directory,'%s.out'%(out_string)), 'w') as out_file
 #      results[message["file-number"] - 1] = ...
        pprint(message)
        image = Image(message, out_file)
+       results[message["file-number"] - 1] = message
        # #out_array.append([message['file-pattern-index'], message['total_intensity'],message['n_spots_no_ice']])
        results_seen += 1
        print(results_seen)
@@ -292,6 +293,8 @@ with open(os.path.join(output_directory,'%s.out'%(out_string)), 'w') as out_file
        #    print 50*' COLLECTION ABORTED '
        #    break
  
+with open(os.path.join(output_directory,'%s.json'%(out_string)), 'wb') as out:
+     json.dump(results, out)
 
 print(results_seen , 'out of ', pattern_end, 'images processed')
 #plot(out_array, spot_cutoff)
