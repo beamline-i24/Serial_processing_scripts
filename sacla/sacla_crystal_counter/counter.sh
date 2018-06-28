@@ -1,0 +1,21 @@
+python sacla_counter_3.py -i /dls/x02-1/data/2017/mx15722-8/processing/DtpAa-imidazole/all-combined/DtpAa_allchips_final.out  -o dtpaa-imidazole-1000.out  -n 1000
+python sacla_counter_3.py -i /dls/x02-1/data/2017/mx15722-8/processing/DtpAa-imidazole/all-combined/DtpAa_allchips_final.out  -o dtpaa-imidazole-2000.out  -n 2000
+python sacla_counter_3.py -i /dls/x02-1/data/2017/mx15722-8/processing/DtpAa-imidazole/all-combined/DtpAa_allchips_final.out  -o dtpaa-imidazole-3000.out  -n 3000
+python sacla_counter_3.py -i /dls/x02-1/data/2017/mx15722-8/processing/DtpAa-imidazole/all-combined/DtpAa_allchips_final.out  -o dtpaa-imidazole-4000.out  -n 4000
+python sacla_counter_3.py -i /dls/x02-1/data/2017/mx15722-8/processing/DtpAa-imidazole/all-combined/DtpAa_allchips_final.out  -o dtpaa-imidazole-5000.out  -n 5000
+python sacla_counter_3.py -i /dls/x02-1/data/2017/mx15722-8/processing/DtpAa-imidazole/all-combined/DtpAa_allchips_final.out  -o dtpaa-imidazole-6000.out  -n 6000
+python sacla_counter_3.py -i /dls/x02-1/data/2017/mx15722-8/processing/DtpAa-imidazole/all-combined/DtpAa_allchips_final.out  -o dtpaa-imidazole-7000.out  -n 7000
+python sacla_counter_3.py -i /dls/x02-1/data/2017/mx15722-8/processing/DtpAa-imidazole/all-combined/DtpAa_allchips_final.out  -o dtpaa-imidazole-8000.out  -n 8000
+python sacla_counter_3.py -i /dls/x02-1/data/2017/mx15722-8/processing/DtpAa-imidazole/all-combined/DtpAa_allchips_final.out  -o dtpaa-imidazole-9000.out  -n 9000
+python sacla_counter_3.py -i /dls/x02-1/data/2017/mx15722-8/processing/DtpAa-imidazole/all-combined/DtpAa_allchips_final.out  -o dtpaa-imidazole-10000.out -n 10000
+python sacla_counter_3.py -i /dls/x02-1/data/2017/mx15722-8/processing/DtpAa-imidazole/all-combined/DtpAa_allchips_final.out  -o dtpaa-imidazole-11000.out -n 11000
+python sacla_counter_3.py -i /dls/x02-1/data/2017/mx15722-8/processing/DtpAa-imidazole/all-combined/DtpAa_allchips_final.out  -o dtpaa-imidazole-12000.out -n 12000
+python sacla_counter_3.py -i /dls/x02-1/data/2017/mx15722-8/processing/DtpAa-imidazole/all-combined/DtpAa_allchips_final.out  -o dtpaa-imidazole-13000.out -n 13000
+python sacla_counter_3.py -i /dls/x02-1/data/2017/mx15722-8/processing/DtpAa-imidazole/all-combined/DtpAa_allchips_final.out  -o dtpaa-imidazole-14000.out -n 14000
+python sacla_counter_3.py -i /dls/x02-1/data/2017/mx15722-8/processing/DtpAa-imidazole/all-combined/DtpAa_allchips_final.out  -o dtpaa-imidazole-15000.out -n 15000
+python sacla_counter_3.py -i /dls/x02-1/data/2017/mx15722-8/processing/DtpAa-imidazole/all-combined/DtpAa_allchips_final.out  -o dtpaa-imidazole-16000.out -n 16000
+python sacla_counter_3.py -i /dls/x02-1/data/2017/mx15722-8/processing/DtpAa-imidazole/all-combined/DtpAa_allchips_final.out  -o dtpaa-imidazole-17000.out -n 17000
+python sacla_counter_3.py -i /dls/x02-1/data/2017/mx15722-8/processing/DtpAa-imidazole/all-combined/DtpAa_allchips_final.out  -o dtpaa-imidazole-18000.out -n 18000
+python sacla_counter_3.py -i /dls/x02-1/data/2017/mx15722-8/processing/DtpAa-imidazole/all-combined/DtpAa_allchips_final.out  -o dtpaa-imidazole-19000.out -n 19000
+python sacla_counter_3.py -i /dls/x02-1/data/2017/mx15722-8/processing/DtpAa-imidazole/all-combined/DtpAa_allchips_final.out  -o dtpaa-imidazole-20000.out -n 20000
+

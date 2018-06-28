@@ -1,0 +1,24 @@
+input.reference_geometry=
+spotfinder.lookup.mask=
+integration.lookup.mask=
+spotfinder.filter.min_spot_size=2
+significance_filter.enable=True
+#significance_filter.isigi_cutoff=1.0
+
+mp.nproc = 20
+mp.method=multiprocessing
+
+indexing {
+  known_symmetry {
+    space_group = 
+ 
+    unit_cell = 
+ 
+  }
+
+  stills.indexer=stills
+  stills.method_list=fft1d real_space_grid_search
+  multiple_lattice_search.max_lattices=3
+}
+
+
