@@ -21,7 +21,7 @@ def get_num_reflections(directory, file_name):
 
 def get_reflection_list(directory, file_name):
     reflection_list=[]
-    reflection_list.append(converter.from_string(os.path.join(directory,file_name)))
+    reflection_list.append(converter.from_string(file_name))#os.path.join(directory,file_name)))
     return reflection_list
 
 
@@ -39,7 +39,7 @@ def get_file_names(directory, current_image):
 
 def int_search(current_image, ints):
     img = "%05d"%int(current_image)
-    ints=[int_fil for int_fil in ints if img in int_fil]
+    ints=[int_fil.split('/')[-1] for int_fil in ints if img in int_fil]
     int_0 = [int_0 for int_0 in ints if int_0.startswith('int-0')]
     int_1 = [int_1 for int_1 in ints if int_1.startswith('int-1')]
     int_2 = [int_2 for int_2 in ints if int_2.startswith('int-2')]
@@ -63,7 +63,7 @@ def indx_search(current_image, ints, directory):
     else:
        return None
 
-with open('hanson.json') as f:
+with open('/dls/i24/data/2018/nt14493-112/processing/image_analysis/banega.json') as f:
     data = json.load(f)
 
 failed_but_indexed=0
@@ -72,12 +72,15 @@ int_no_index=0
 no_idx = []
 miss_miss = 0
 hit_hit = 0
-directory ='/dls/i24/data/2018/nt14493-94/processing/stills_process/acnir/hanson_jr' 
-dir_list= os.listdir(directory)
-ints= [int_fil for int_fil in dir_list if int_fil.startswith('int')]
+directories = os.listdir('/dls/i24/data/2018/nt14493-112/processing/stills_process/nod/banega/run_2/')
+dir_list = []
+for directory in directories:
+    d_list= ['/dls/i24/data/2018/nt14493-112/processing/stills_process/nod/banega/run_2/'+directory+'/'+fil for fil in os.listdir('/dls/i24/data/2018/nt14493-112/processing/stills_process/nod/banega/run_2/'+directory)]
+    dir_list = dir_list + d_list
+ints= [int_fil for int_fil in dir_list if int_fil.split('/')[-1].startswith('int')]
 indxs= [indx_fil for indx_fil in dir_list if indx_fil.endswith('indexed.pickle')]
 out_array=[]
-for i, record in enumerate(data):
+for i, record in enumerate(data[:]):
     print_flush(str(i))
     strong=record['n_spots_total']
     intensity=record['total_intensity']
@@ -85,36 +88,36 @@ for i, record in enumerate(data):
        ratio=0
     else:
        ratio=(float(record['total_intensity'])/float(record['n_spots_no_ice']))
-    hit = int_search(record['image'].split('_')[1].split('.')[0], ints)
-    n_indexed = indx_search(record['image'].split('_')[1].split('.')[0], indxs, directory)
+    hit = int_search(record['file-number'], ints)
+    n_indexed = indx_search(record['file-number'], indxs, directory)
     noise_1 = record['noisiness_method_1']
     noise_2 = record['noisiness_method_2']
+    d_min = record['estimated_d_min']
+    d_min_1 = record['d_min_distl_method_1']
     #try:
     #   n_indexed=record['n_indexed']
     #   fraction_indexed=record['fraction_indexed']
     #except:
     #   n_indexed=0
     #   fraction_indexed=0
-    if n_indexed:
+    try:
        fraction_indexed=float(n_indexed)/strong
-    else:
+    except:
        fraction_indexed=0
-    if hit == 0 and noise_1 > 0 and noise_1 < 0.875:
-       #failed_but_indexed+=1
-       fail.append(record['image'])
-    if hit > 0 and noise_1 >= 0.875:
-       #int_no_index+=1
-       no_idx.append(record['image'])
+    #if hit == 0 and n_indexed > 0:
+    #   failed_but_indexed+=1
+    #   fail.append(record['file'])
+    if hit > 0 and n_indexed==0:
+       int_no_index+=1
+       no_idx.append(record['file'])
     if hit == 0 and fraction_indexed == 0:
        miss_miss +=1
     if hit > 0 and fraction_indexed > 0:
        hit_hit +=1
     if strong > 16 and ratio > 20 and hit == 0:
-       fail.append(record['image'])
-    out_array.append([strong,intensity,ratio,hit,n_indexed,fraction_indexed, noise_1, noise_2, i])
+       fail.append(record['file'])
+    out_array.append([strong,intensity,ratio,hit,n_indexed,fraction_indexed, noise_1, noise_2, i, d_min_1, d_min])
 
-print fail
-print no_idx
 with open('miss_low_noise.sh','w') as out:
      for image in fail:
          out.write('dials.stills_process %s acnir_2.phil \n'%image)
@@ -123,10 +126,10 @@ with open('hit_high_noise.sh','w') as out:
 #         out.write('dials.stills_process %s acnir_jr.phil \n'%image)
      for image in no_idx:
          out.write('dials.stills_process %s acnir_jr.phil \n'%image)
-print 'failed to integrate but indexed:', failed_but_indexed
-print 'failed to index in client but integrated:', int_no_index
-print 'both miss:', miss_miss
-print 'both_hit:', hit_hit
+#print 'failed to integrate but indexed:', failed_but_indexed
+#print 'failed to index in client but integrated:', int_no_index
+#print 'both miss:', miss_miss
+#print 'both_hit:', hit_hit
 out_array=np.array(out_array)
 strong = out_array[:,0]
 intensity = out_array[:,1]
@@ -135,6 +138,8 @@ fraction_indexed = out_array[:,5]
 ratio=out_array[:,2]
 hits = out_array[:,3]
 image = out_array[:,8]
+d_min_1 = out_array[:,9]
+d_min = out_array[:,10]
 noise_1 = out_array[:,6]
 noise_2 = out_array[:,7]
 int_0_array = out_array[out_array[:,3] == 1]
@@ -143,6 +148,11 @@ int_2_array = out_array[out_array[:,3] == 3]
 miss_array = out_array[out_array[:,3] == 0]
 
 print(len(image), len(noise_1))
+
+plt.scatter(image,d_min, c=hits, marker='o', label='noise_1')
+plt.legend()
+plt.colorbar()
+plt.show()
 
 plt.scatter(ratio,noise_1, c=hits, marker='o', label='noise_1')
 plt.legend()

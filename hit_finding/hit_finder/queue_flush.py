@@ -38,7 +38,7 @@ print pattern
 #chip_name = 'chip_name'
 #sub_directory='image_analysis'
 pattern_start = 0
-pattern_end =  2000
+pattern_end =  250000
 timeout_first = 0
 timeout = 0
 results_seen = 0
@@ -100,5 +100,5 @@ pprint('initiating queue')
 
 workflows.recipe.wrap_subscribe(stomp, 'transient.i24.pia_feedback', receiver, acknowledgement=False)
 
-time.sleep(1)
+time.sleep(1000)
 stomp.disconnect()

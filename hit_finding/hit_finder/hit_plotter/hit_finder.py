@@ -270,7 +270,7 @@ def animate(i, args):
            hits.append(0) 
            colours.append(scalarMap.to_rgba(0))
     if hit_count > 0 and total > 0: 
-       print('estimated counts rate = %f'%(float(hit_count*100/float(total))))
+       print('estimated counts rate = %f'%(float(len(indexable_images)*100/float(total))))
     print('number of potential indexable images =  %d'%(len(indexable_images)))
     if len(indexable_images) > 0 and hit_count > 0:
        print('estimated hit_rate from indexable images = %f'%(float(hit_count)*100/float(len(indexable_images))))

@@ -4,6 +4,7 @@
 import argparse
 from subprocess import call
 from pprint import pprint
+import json
 import uuid
 import time
 import os
@@ -73,104 +74,27 @@ def output_directory_check(output_directory):
        time.sleep(2)
     return output_directory
 
-StompTransport.load_configuration_file('/dls_sw/apps/zocalo/secrets/credentials-i24.cfg')
-# StompTransport.load_configuration_file('/dls_sw/apps/zocalo/secrets/credentials-live.cfg')
-
-args=argparser()
-output_directory = None
-if args.visit_directory: 
-   visit_directory = args.visit_directory
-   sub_directory = args.sub_directory
-   chip_name = args.chip_name
-   input_directory = os.path.join(visit_directory, sub_directory)
-   if args.run_number:
-      run_number = int(args.run_number)
-   else:
-      run_file = [fil for fil in os.listdir(input_directory) if fil.endswith('00000.cbf')]
-      run_number = int(run_file[0].strip(chip_name).strip('_00000.cbf'))
-   pattern = os.path.join(input_directory, "%s%04d_"%(chip_name, run_number)+"%05d.cbf")
-   out_string = chip_name
-else:
-   visit_directory = ca.cagetstring(pv.pilat_filepath)
-   print visit_directory
-   if visit_directory.startswith('/ramdisk'):
-      visit_directory = visit_directory.replace('ramdisk','dls/i24/data')
-      print 'visit_director', visit_directory
-   run_number = int(ca.caget('BL24I-EA-PILAT-01:cam1:FileNumber'))-1
-   filefromdet = ca.cagetstring('BL24I-EA-PILAT-01:cam1:FileName_RBV')
-   out_string = filefromdet
-   #pattern = os.path.join(visit_directory, "%s%04d_"%(filefromdet, run_number)+"%05d.cbf")
-   pattern = os.path.join(visit_directory, "%s"%(filefromdet)+"%05d.cbf")
-print pattern
-parts = visit_directory.split('/')
-#chip_name=parts[5]
-#run=parts[6]
-output_directory = os.path.join('/'+parts[0],parts[1],parts[2],parts[3],parts[4],parts[5], 'processing', 'image_analysis')
-print '-------------', output_directory
-token = output_directory_check(output_directory)
-
-#pattern = "/dls/i24/data/2018/nt14493-104/had3/agouti/agouti0044_%05d.cbf"
-#pattern = "/dls/i24/data/2018/mx19458-1/IPNS/syringe2/run6/IPNS2_%05d.cbf"
-#chip_name = 'chip_name'
-#sub_directory='image_analysis'
-if args.pattern_start:
-   pattern_start = int(args.pattern_start)
-else:
-   pattern_start = 1 #ca.caget(pv.pilat_numimages)
-if args.pattern_end:
-   pattern_end = int(args.pattern_end)
-else:
-   pattern_end =  ca.caget(pv.pilat_numimages+'_RBV')
-#pattern_start = 0
-timeout_first = 30
-timeout = 30
-results_seen = 0
-spot_cutoff = args.spot_count_cutoff
-d_min_cutoff = args.d_min_cutoff
-d_max_cutoff = args.d_max_cutoff
-out_array=[]
-unique_processing_id = str(uuid.uuid4())
-mask=args.mask #'/dls/i24/data/2018/nt14493-94/processing/stills_process/mask-310.pickle'
-
-processing_recipe = \
-{
-  "1": { "service": "DLS file watcher",
-         "queue": "filewatcher",
-         "parameters": { "pattern": pattern,  
-                         "pattern-start": pattern_start,
-                         "pattern-end": pattern_end,
-                         "burst-wait": 1,
-                         "timeout-first": timeout_first, # seconds to wait for the first file to appear
-                         "timeout": timeout, # seconds to wait for new files to appear
-                       },
-         "output": { "every": 2 }
-       },
-  "2": { "service": "DLS Per-Image-Analysis",
-         "queue": "per_image_analysis",
-         "output": 3,
-         "parameters": { 'd_min': d_min_cutoff, 'd_max': d_max_cutoff  , 'spotfinder.lookup.mask':mask, 'json':chip_name+'.json'} 
-       },
-  "3": { "service": "Feedback for I24 serial crystallography",
-         "queue": "transient.i24.pia_feedback",
-         "parameters": { "id": unique_processing_id,
-                       },
-       },
-  "start": [
-     [1, []]
-  ]
-}
-
-message = { 'custom_recipe': processing_recipe,
-            'parameters': {},
-            'recipes': [],
-          }
-
-stomp = StompTransport()
-stomp.connect()
-stomp.send(
-    'processing_recipe',
-     message
-)
+def plot(out_array, spot_cutoff, plot_log=True, show=True):
+       np_array = np.array(out_array)
+       plt.scatter(np_array[:,1],np_array[:,2])
+       if plot_log:
+           a,b = np.polyfit(np.log(np_array[:,1]),np_array[:,2],1, w=np.sqrt(np_array[:,2]))
+           rate=0
+           for num, i, strong in np_array:
+               if i == 0.1 and strong == 0.1:
+                  continue
+               elif i == 0:
+                  continue
+               elif strong < spot_cutoff:
+                  continue
+               elif strong <= a*np.log(i)+b:
+                  rate+=1
+	   plt.plot(np.unique(np_array[:,1]), log_fit(np_array[:,1], np_array[:,2]), label=out_file)
+       if show:
+	    plt.show()
+       else:
+           plt.draw()
+       print('rate = %f'%(float(rate)/len(np_array)))
 
 class Image:
     def __init__(self, spot_dict, out_file):
@@ -232,32 +156,108 @@ class Image:
         out_file.flush()
         return 
 
+StompTransport.load_configuration_file('/dls_sw/apps/zocalo/secrets/credentials-i24.cfg')
+
+args=argparser()
+output_directory = None
+
+if args.visit_directory: 
+   visit_directory = args.visit_directory
+   sub_directory = args.sub_directory
+   chip_name = args.chip_name
+   input_directory = os.path.join(visit_directory, sub_directory)
+   if args.run_number:
+      run_number = int(args.run_number)
+   else:
+      run_file = [fil for fil in os.listdir(input_directory) if fil.endswith('00000.cbf')]
+      run_number = int(run_file[0].strip(chip_name).strip('_00000.cbf'))
+   pattern = os.path.join(input_directory, "%s%04d_"%(chip_name, run_number)+"%05d.cbf")
+   out_string = chip_name
+
+else:
+   visit_directory = ca.cagetstring(pv.pilat_filepath)
+   print visit_directory
+   if visit_directory.startswith('/ramdisk'):
+      visit_directory = visit_directory.replace('ramdisk','dls/i24/data')
+      print 'visit_director', visit_directory
+   run_number = int(ca.caget('BL24I-EA-PILAT-01:cam1:FileNumber'))-1
+   filefromdet = ca.cagetstring('BL24I-EA-PILAT-01:cam1:FileName_RBV')
+   out_string = filefromdet
+   pattern = os.path.join(visit_directory, "%s%04d_"%(filefromdet, run_number)+"%05d.cbf")
+
+print pattern
+parts = visit_directory.split('/')
+output_directory = os.path.join('/'+parts[0],parts[1],parts[2],parts[3],parts[4],parts[5], 'processing', 'image_analysis')
+print '-------------', output_directory
+token = output_directory_check(output_directory)
+
+#####test_pattern   pattern = "/dls/i24/data/2018/nt14493-104/had3/agouti/agouti0044_%05d.cbf"
+
+if args.pattern_start:
+   pattern_start = int(args.pattern_start)
+else:
+   pattern_start = 0
+if args.pattern_end:
+   pattern_end = int(args.pattern_end)
+else:
+   pattern_end =  ca.caget(pv.pilat_numimages+'_RBV')
+
+timeout_first = 30
+timeout = 30
+results_seen = 0
+spot_cutoff = args.spot_count_cutoff
+d_min_cutoff = args.d_min_cutoff
+d_max_cutoff = args.d_max_cutoff
+out_array=[]
+unique_processing_id = str(uuid.uuid4())
+mask=args.mask 
+
+processing_recipe = \
+{
+  "1": { "service": "DLS file watcher",
+         "queue": "filewatcher",
+         "parameters": { "pattern": pattern,  
+                         "pattern-start": pattern_start,
+                         "pattern-end": pattern_end,
+                         "burst-wait": 1,
+                         "timeout-first": timeout_first, # seconds to wait for the first file to appear
+                         "timeout": timeout, # seconds to wait for new files to appear
+                       },
+         "output": { "every": 2 }
+       },
+  "2": { "service": "DLS Per-Image-Analysis",
+         "queue": "per_image_analysis",
+         "output": 3,
+         "parameters": { 'd_min': d_min_cutoff, 'd_max': d_max_cutoff  , 'spotfinder.lookup.mask':mask} 
+       },
+  "3": { "service": "Feedback for I24 serial crystallography",
+         "queue": "transient.i24.pia_feedback",
+         "parameters": { "id": unique_processing_id,
+                       },
+       },
+  "start": [
+     [1, []]
+  ]
+}
+
+message = { 'custom_recipe': processing_recipe,
+            'parameters': {},
+            'recipes': [],
+          }
+
+stomp = StompTransport()
+stomp.connect()
+stomp.send(
+    'processing_recipe',
+     message
+)
+
+
 q=Queue.Queue()
 def receiver(rw, header, message):
    if rw.recipe_step.get("parameters", {}).get("id") == unique_processing_id:
      q.put(message)
 
-def plot(out_array, spot_cutoff, plot_log=True, show=True):
-       np_array = np.array(out_array)
-       plt.scatter(np_array[:,1],np_array[:,2])
-       if plot_log:
-           a,b = np.polyfit(np.log(np_array[:,1]),np_array[:,2],1, w=np.sqrt(np_array[:,2]))
-           rate=0
-           for num, i, strong in np_array:
-               if i == 0.1 and strong == 0.1:
-                  continue
-               elif i == 0:
-                  continue
-               elif strong < spot_cutoff:
-                  continue
-               elif strong <= a*np.log(i)+b:
-                  rate+=1
-	   plt.plot(np.unique(np_array[:,1]), log_fit(np_array[:,1], np_array[:,2]), label=out_file)
-       if show:
-	    plt.show()
-       else:
-           plt.draw()
-       print('rate = %f'%(float(rate)/len(np_array)))
 
 print('starting per image analysis')
 print('loading pattern: ', pattern)
@@ -270,34 +270,34 @@ pprint('initiating queue')
 
 workflows.recipe.wrap_subscribe(stomp, 'transient.i24.pia_feedback', receiver, acknowledgement=False)
 
-results = [ False ] * (int(pattern_end) - int(pattern_start))
+results = [ False ] * (int(pattern_end) - int(pattern_start) + 1)
 
 print output_directory
 
+timeout = 1
+timeout_start = time.time()
 #with open('%s.out'%(chip_name), 'w') as out_file:
 with open(os.path.join(output_directory,'%s.out'%(out_string)), 'w') as out_file:
     print('file made')
-    while True:
-#   while not all(results) or not timeout:
-       message = q.get()#timeout=60)
-#      results[message["file-number"] - 1] = ...
+    while not all(results) or time.time() < timeout_start + timeout:
+       message = q.get()
        pprint(message)
        image = Image(message, out_file)
        results[message["file-number"] - 1] = message
-       # #out_array.append([message['file-pattern-index'], message['total_intensity'],message['n_spots_no_ice']])
        results_seen += 1
+       timeout_start=time.time()
        print(results_seen)
        if int(results_seen) >= (int(pattern_end)):
            break
-       #if ca.caget(pv.me14e_gp9) != 0:
-       #    print 50*' COLLECTION ABORTED '
-       #    break
+       if ca.caget(pv.me14e_gp9) != 0:
+           print 50*' COLLECTION ABORTED '
+           break
  
 with open(os.path.join(output_directory,'%s.json'%(out_string)), 'wb') as out:
      json.dump(results, out)
 
 print(results_seen , 'out of ', pattern_end, 'images processed')
-#plot(out_array, spot_cutoff)
 
 time.sleep(1)
 stomp.disconnect()
+print 'EOP'
